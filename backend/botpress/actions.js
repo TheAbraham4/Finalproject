@@ -11,8 +11,10 @@ module.exports = {
         date: data.reservation.date,
         time: data.reservation.time,
         partySize: parseInt(data.reservation.partySize),
+        branch: data.reservation.branch, 
         source: 'botpress'
-      };
+    };
+
 
       const response = await axios.post(`${BOTPRESS_API_URL}/botpress-reservations`, reservationData);
       return {
@@ -51,4 +53,4 @@ module.exports = {
       };
     }
   }
-}; 
+};

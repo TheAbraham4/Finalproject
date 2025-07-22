@@ -30,6 +30,7 @@ router.post('/', async (req, res) => {
     const partySize = Number(req.body.partySize);
     const rawDateTime = req.body.datetime || req.body.dateTime;
     const customerName = req.body.customerName?.trim() || req.body.name?.trim() || email?.split('@')[0] || 'Botpress User';
+    const branch = req.body.branch || 'main'; // Default to 'main' branch
 
     // Validate datetime
     let datetime = '';
@@ -47,7 +48,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Validate required fields (confNumber is now optional)
+    // Validate required fields
     if (!email || isNaN(partySize)) {
       return res.status(400).json({
         success: false,
@@ -83,7 +84,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // 🔐 Auto-generate confirmation number
     const confNumber = Math.floor(Math.random() * 10000);
 
     const botpressReservationData = {
@@ -92,7 +92,8 @@ router.post('/', async (req, res) => {
       partySize,
       reservationId,
       conf_number: confNumber,
-      status: 'pending'
+      status: 'pending',
+      branch 
     };
 
     console.log('📦 Creating Botpress reservation with:', botpressReservationData);
@@ -109,7 +110,8 @@ router.post('/', async (req, res) => {
           datetime,
           partySize,
           confNumber,
-          customerName
+          customerName,
+          branch 
         }
       });
     } catch (err) {
@@ -130,13 +132,16 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update reservation status
+// Update reservation status or workflow_branch (optional)
 router.patch('/:id/status', [auth, admin], async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, workflow_branch } = req.body;
     const id = req.params.id;
 
-    const updated = await BotpressReservation.update(id, { status });
+    const updated = await BotpressReservation.update(id, {
+      status,
+      branch
+    });
 
     if (updated) {
       res.json({ message: 'Reservation status updated successfully' });

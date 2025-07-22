@@ -11,6 +11,7 @@ class BotpressReservation {
         status ENUM('pending', 'confirmed', 'cancelled', 'completed', 'no-show', 'cancelled-by-customer', 'cancelled-by-restaurant') DEFAULT 'pending',
         reservation_id INT,
         conf_number INT, 
+        branch VARCHAR(100),
         source VARCHAR(50) DEFAULT 'botpress',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -30,8 +31,8 @@ class BotpressReservation {
   static async create(reservationData) {
     const sql = `
       INSERT INTO botpress_reservations 
-      (email, datetime, party_size, reservation_id, conf_number, status) 
-      VALUES (?, ?, ?, ?, ?, ?)
+      (email, datetime, party_size, reservation_id, conf_number, status, branch) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     
     try {
@@ -41,7 +42,8 @@ class BotpressReservation {
         reservationData.partySize,
         reservationData.reservationId || null,
         reservationData.conf_number || null, 
-        reservationData.status || 'pending'
+        reservationData.status || 'pending',
+        reservationData.branch || 'main'
       ]);
       return result.insertId;
     } catch (error) {
@@ -85,7 +87,7 @@ class BotpressReservation {
   static async update(id, updateData) {
     const sql = `
       UPDATE botpress_reservations 
-      SET datetime = ?, party_size = ?, status = ?, conf_number = ?
+      SET datetime = ?, party_size = ?, status = ?, conf_number = ?, branch = ?
       WHERE id = ?
     `;
     try {
@@ -93,7 +95,8 @@ class BotpressReservation {
         updateData.datetime,
         updateData.partySize,
         updateData.status,
-        updateData.conf_number || null, // ✅ Optional support
+        updateData.conf_number || null,
+        updateData.branch || null,
         id
       ]);
       return result.affectedRows > 0;
