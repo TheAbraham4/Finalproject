@@ -18,7 +18,8 @@ const CustomerProfile = () => {
     time: '',
     partySize: '',
     phone: '',
-    specialRequests: ''
+    specialRequests: '',
+    reviewData: { rating: 5, comment: '' }
   });
 
   // Review states
