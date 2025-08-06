@@ -44,7 +44,7 @@ const Login = () => {
         <div className="app__auth-logo">
           <img src={images.gericht} alt="Gericht Logo" />
         </div>
-        <h1 className="headtext__cormorant">Welcome Back</h1>
+        <h1 className="headtext__cormorant">Welcome</h1>
         <p className="p__opensans">Sign in to your account</p>
         
         {error && <div className="app__auth-error">{error}</div>}

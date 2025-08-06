@@ -3,20 +3,37 @@ const router = express.Router();
 const Reservation = require('../models/reservation');
 const { User } = require('../models/userMongo');
 const auth = require('../middleware/auth');
+const db = require('../config/database');
+
+// Helper function to check slot availability
+async function isSlotAvailable(date, time) {
+  const sql = `
+    SELECT COUNT(*) as count
+    FROM reservations
+    WHERE date = ? AND time = ?
+  `;
+  const [rows] = await db.query(sql, [date, time]);
+  return rows[0].count < 5;
+}
 
 // Create a new reservation
 router.post('/', auth, async (req, res) => {
   try {
+    // Check slot availability
+    const slotAvailable = await isSlotAvailable(req.body.date, req.body.time);
+    if (!slotAvailable) {
+      return res.status(400).json({ message: 'No tables available at that time.' });
+    }
+
     // Fetch user from MongoDB to get the firstName
     const user = await User.findById(req.user._id);
-    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const reservationData = {
       userId: req.user._id,
-      customerName: user.firstName, // Use firstName from MongoDB
+      customerName: user.firstName,
       email: user.email,
       phone: req.body.phone || '',
       date: req.body.date,
@@ -49,7 +66,7 @@ router.patch('/:id/status', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     const success = await Reservation.updateStatus(id, status);
     if (success) {
       res.json({ message: 'Reservation status updated' });
@@ -104,6 +121,12 @@ router.delete('/:id', auth, async (req, res) => {
 // Create a reservation from Botpress (no auth required)
 router.post('/bot', async (req, res) => {
   try {
+    // Check slot availability
+    const slotAvailable = await isSlotAvailable(req.body.date, req.body.time);
+    if (!slotAvailable) {
+      return res.status(400).json({ message: 'No tables available at that time.' });
+    }
+
     const reservationData = {
       userId: 'botpress',
       customerName: req.body.customerName,
@@ -117,8 +140,8 @@ router.post('/bot', async (req, res) => {
     };
 
     const reservationId = await Reservation.create(reservationData);
-    res.status(201).json({ 
-      id: reservationId, 
+    res.status(201).json({
+      id: reservationId,
       ...reservationData,
       message: 'Reservation created successfully from Botpress'
     });
@@ -168,10 +191,7 @@ router.get('/availability', async (req, res) => {
   try {
     const { date, time, partySize } = req.query;
 
-    // You can implement your own availability logic here
-    // For example, check if there are too many reservations for that time slot
-
-    // Simple example: limit to 5 reservations per time slot
+    // Limit to 5 reservations per time slot
     const sql = `
       SELECT COUNT(*) as count
       FROM reservations
